@@ -1,0 +1,20 @@
+Wheat Disease Tracker - Technical Stack
+
+Frontend Stack:
+- HTML5: Page structure and layout
+- CSS3: Styling, custom animations, responsive design (Vanilla CSS without frameworks)
+- JavaScript (Vanilla): Client-side logic, API calls, dynamic UI updates
+
+Backend Stack:
+- Node.js: JavaScript runtime environment
+- Express.js: Web application framework for routing and server logic
+
+AI & Machine Learning:
+- Google Gemini API (gemini-3-flash-preview): Used for image analysis and disease prediction (via @google/genai package)
+
+Utilities & Middleware:
+- multer: Middleware for handling multipart/form-data, primarily used for uploading images
+- dotenv: Module to load environment variables from a .env file into process.env
+
+Development Tools:
+- nodemon: Utility that monitors for changes and automatically restarts the server during development

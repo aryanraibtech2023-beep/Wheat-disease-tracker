@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriVision | Outbreak Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        .stats-card {
+            padding: 1.5rem;
+            text-align: center;
+        }
+        .stats-number {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 0.5rem 0;
+        }
+        .chart-container {
+            padding: 2rem;
+            width: 100%;
+            height: 400px;
+        }
+        .full-width {
+            grid-column: 1 / -1;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-gradient"></div>
+
+    <!-- Navigation -->
+    <nav class="navbar glass-effect">
+        <div class="container nav-container">
+            <h1 class="logo"><i class="fa-solid fa-leaf logo-icon"></i> AgriVision</h1>
+            <ul class="nav-links">
+                <li><a href="index.html">Scan Crop</a></li>
+                <li><a href="dashboard.html" class="active">Outbreak Dashboard</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container">
+        <section class="hero text-center" style="margin-bottom: 2rem;">
+            <h2 class="hero-title">Regional <span class="highlight">Disease Monitoring</span></h2>
+            <p class="hero-subtitle">Real-time mock analytics of wheat disease spread across various districts to assist agricultural authorities.</p>
+        </section>
+
+        <!-- Stats Overview -->
+        <div class="dashboard-grid">
+            <div class="stats-card glass-effect slide-up" style="animation-delay: 0.1s;">
+                <h3>Total Scans Today</h3>
+                <div class="stats-number">1,248</div>
+                <p><span style="color:var(--success);"><i class="fa-solid fa-arrow-trend-up"></i> 12%</span> vs yesterday</p>
+            </div>
+            <div class="stats-card glass-effect slide-up" style="animation-delay: 0.2s;">
+                <h3>Diseases Detected</h3>
+                <div class="stats-number" style="color:var(--danger)">342</div>
+                <p>Mostly Leaf Rust</p>
+            </div>
+            <div class="stats-card glass-effect slide-up" style="animation-delay: 0.3s;">
+                <h3>Healthy Crops</h3>
+                <div class="stats-number" style="color:var(--success)">906</div>
+                <p>72% Health Rate</p>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="dashboard-grid">
+            <div class="chart-container glass-effect slide-up full-width">
+                <canvas id="diseaseSpreadChart"></canvas>
+            </div>
+            <div class="chart-container glass-effect slide-up">
+                <canvas id="diseaseTypeChart"></canvas>
+            </div>
+            <div class="chart-container glass-effect slide-up">
+                <canvas id="districtChart"></canvas>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            Chart.defaults.font.family = "'Outfit', sans-serif";
+            Chart.defaults.color = '#4b5563';
+
+            // Disease Spread Timeline (Line Chart)
+            new Chart(document.getElementById('diseaseSpreadChart'), {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Reported Disease Cases',
+                        data: [65, 59, 80, 81, 110, 140, 160],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { title: { display: true, text: 'Disease Spread Trend (Last 7 Days)', font: { size: 16 } } }
+                }
+            });
+
+            // Disease Types (Doughnut Chart)
+            new Chart(document.getElementById('diseaseTypeChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Leaf Rust', 'Stripe Rust', 'Stem Rust', 'Powdery Mildew', 'Blight'],
+                    datasets: [{
+                        data: [45, 25, 10, 15, 5],
+                        backgroundColor: ['#ef4444', '#f59e0b', '#8b5cf6', '#3b82f6', '#ec4899']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { title: { display: true, text: 'Distribution of Detected Diseases', font: { size: 16 } } }
+                }
+            });
+
+            // District View (Bar Chart)
+            new Chart(document.getElementById('districtChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['District A', 'District B', 'District C', 'District D'],
+                    datasets: [{
+                        label: 'Active Cases',
+                        data: [120, 190, 80, 210],
+                        backgroundColor: '#fbbf24',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { title: { display: true, text: 'Cases by Region', font: { size: 16 } } }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
