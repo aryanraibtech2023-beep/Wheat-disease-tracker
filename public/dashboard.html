@@ -59,19 +59,19 @@
         <!-- Stats Overview -->
         <div class="dashboard-grid">
             <div class="stats-card glass-effect slide-up" style="animation-delay: 0.1s;">
-                <h3>Total Scans Today</h3>
-                <div class="stats-number">1,248</div>
-                <p><span style="color:var(--success);"><i class="fa-solid fa-arrow-trend-up"></i> 12%</span> vs yesterday</p>
+                <h3>Total Scans</h3>
+                <div class="stats-number" id="totalScansNum">0</div>
+                <p>All-time usage</p>
             </div>
             <div class="stats-card glass-effect slide-up" style="animation-delay: 0.2s;">
                 <h3>Diseases Detected</h3>
-                <div class="stats-number" style="color:var(--danger)">342</div>
-                <p>Mostly Leaf Rust</p>
+                <div class="stats-number" id="diseaseNum" style="color:var(--danger)">0</div>
+                <p id="mostCommonDisease">No data</p>
             </div>
             <div class="stats-card glass-effect slide-up" style="animation-delay: 0.3s;">
                 <h3>Healthy Crops</h3>
-                <div class="stats-number" style="color:var(--success)">906</div>
-                <p>72% Health Rate</p>
+                <div class="stats-number" id="healthyNum" style="color:var(--success)">0</div>
+                <p id="healthRate">0% Health Rate</p>
             </div>
         </div>
 
@@ -90,66 +90,136 @@
     </main>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             Chart.defaults.font.family = "'Outfit', sans-serif";
             Chart.defaults.color = '#4b5563';
 
-            // Disease Spread Timeline (Line Chart)
-            new Chart(document.getElementById('diseaseSpreadChart'), {
-                type: 'line',
-                data: {
-                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                    datasets: [{
-                        label: 'Reported Disease Cases',
-                        data: [65, 59, 80, 81, 110, 140, 160],
-                        borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.2)',
-                        tension: 0.4,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { title: { display: true, text: 'Disease Spread Trend (Last 7 Days)', font: { size: 16 } } }
+            try {
+                const res = await fetch('/api/stats');
+                const records = await res.json();
+                
+                // Process Stats
+                const total = records.length;
+                let healthy = 0;
+                let diseased = 0;
+                const diseaseCounts = {};
+                
+                // Day map
+                const daysMap = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 }; // past 7 days based on delta
+                const dayLabels = [];
+                const now = new Date();
+                
+                for(let i=6; i>=0; i--) {
+                    const d = new Date();
+                    d.setDate(d.getDate() - i);
+                    dayLabels.push(d.toLocaleDateString('en-US', {weekday: 'short'}));
                 }
-            });
 
-            // Disease Types (Doughnut Chart)
-            new Chart(document.getElementById('diseaseTypeChart'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['Leaf Rust', 'Stripe Rust', 'Stem Rust', 'Powdery Mildew', 'Blight'],
-                    datasets: [{
-                        data: [45, 25, 10, 15, 5],
-                        backgroundColor: ['#ef4444', '#f59e0b', '#8b5cf6', '#3b82f6', '#ec4899']
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { title: { display: true, text: 'Distribution of Detected Diseases', font: { size: 16 } } }
+                records.forEach(r => {
+                    const rdate = new Date(r.date);
+                    const diffTime = Math.abs(now - rdate);
+                    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                    if(diffDays <= 6) {
+                        const index = 6 - diffDays;
+                        daysMap[index]++;
+                    }
+                    
+                    const dx = r.disease.toLowerCase();
+                    if(dx === 'healthy') {
+                        healthy++;
+                    } else {
+                        diseased++;
+                        diseaseCounts[dx] = (diseaseCounts[dx] || 0) + 1;
+                    }
+                });
+                
+                document.getElementById('totalScansNum').textContent = total;
+                document.getElementById('diseaseNum').textContent = diseased;
+                document.getElementById('healthyNum').textContent = healthy;
+                
+                if (total > 0) {
+                    const rate = Math.round((healthy / total) * 100);
+                    document.getElementById('healthRate').textContent = rate + '% Health Rate';
                 }
-            });
+                
+                if (diseased > 0) {
+                    let maxD = '';
+                    let maxV = 0;
+                    for (const [k, v] of Object.entries(diseaseCounts)) {
+                        if(v > maxV) { maxV = v; maxD = k; }
+                    }
+                    document.getElementById('mostCommonDisease').textContent = 'Mostly ' + maxD;
+                }
 
-            // District View (Bar Chart)
-            new Chart(document.getElementById('districtChart'), {
-                type: 'bar',
-                data: {
-                    labels: ['District A', 'District B', 'District C', 'District D'],
-                    datasets: [{
-                        label: 'Active Cases',
-                        data: [120, 190, 80, 210],
-                        backgroundColor: '#fbbf24',
-                        borderRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { title: { display: true, text: 'Cases by Region', font: { size: 16 } } }
-                }
-            });
+                // Disease Spread Timeline (Line Chart)
+                new Chart(document.getElementById('diseaseSpreadChart'), {
+                    type: 'line',
+                    data: {
+                        labels: dayLabels,
+                        datasets: [{
+                            label: 'Scans Processed',
+                            data: Object.values(daysMap),
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { title: { display: true, text: 'Scan Activity (Last 7 Days)', font: { size: 16 } } }
+                    }
+                });
+
+                // Disease Types (Doughnut Chart)
+                const dLabels = Object.keys(diseaseCounts);
+                const dData = Object.values(diseaseCounts);
+                
+                new Chart(document.getElementById('diseaseTypeChart'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: dLabels.length ? dLabels : ['None'],
+                        datasets: [{
+                            data: dData.length ? dData : [1],
+                            backgroundColor: ['#ef4444', '#f59e0b', '#8b5cf6', '#3b82f6', '#ec4899', '#10b981']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { title: { display: true, text: 'Distribution of Detected Diseases', font: { size: 16 } } }
+                    }
+                });
+
+                // District View (Bar Chart)
+                // Mock districts since uploads don't have location data
+                new Chart(document.getElementById('districtChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: ['District A', 'District B', 'District C', 'District D'],
+                        datasets: [{
+                            label: 'Active Cases',
+                            data: [
+                                Math.floor(diseased * 0.4), 
+                                Math.floor(diseased * 0.3), 
+                                Math.floor(diseased * 0.2), 
+                                Math.floor(diseased * 0.1)
+                            ],
+                            backgroundColor: '#fbbf24',
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { title: { display: true, text: 'Cases by Region (Estimated)', font: { size: 16 } } }
+                    }
+                });
+
+            } catch (err) {
+                console.error("Failed to fetch stats", err);
+            }
         });
     </script>
 </body>

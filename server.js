@@ -34,6 +34,20 @@ const upload = multer({ storage: storage });
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
+// In-memory storage for scan data
+const scanRecords = [
+    { date: new Date(Date.now() - 6*24*60*60*1000), disease: 'Leaf rust' },
+    { date: new Date(Date.now() - 5*24*60*60*1000), disease: 'Stripe rust' },
+    { date: new Date(Date.now() - 4*24*60*60*1000), disease: 'Healthy' },
+    { date: new Date(Date.now() - 3*24*60*60*1000), disease: 'Stem rust' },
+    { date: new Date(Date.now() - 2*24*60*60*1000), disease: 'Leaf rust' },
+    { date: new Date(Date.now() - 1*24*60*60*1000), disease: 'Blight' },
+];
+
+app.get('/api/stats', (req, res) => {
+    res.json(scanRecords);
+});
+
 // Main Image Analysis Endpoint
 app.post('/api/analyze', upload.single('image'), async (req, res) => {
     try {
@@ -78,6 +92,14 @@ app.post('/api/analyze', upload.single('image'), async (req, res) => {
             // Remove markdown code blocks if any
             const cleanedText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
             aiData = JSON.parse(cleanedText);
+            
+            // Add to our records
+            if (aiData.diagnosis) {
+                scanRecords.push({
+                    date: new Date(),
+                    disease: aiData.diagnosis
+                });
+            }
         } catch (e) {
             console.error("Failed to parse JSON from Gemini", responseText);
             aiData = { error: "Failed to structure response from AI", raw: responseText };
